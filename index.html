@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animated Weather App</title>
+<style>
+    /* Body & animated gradient fallback */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        color: #fff;
+        background: linear-gradient(270deg, #8972ee, #5638ec, #440fa7);
+        background-size: 600% 600%;
+        animation: gradientBG 20s ease infinite;
+    }
+    @keyframes gradientBG {
+        0%{background-position:0% 50%;}
+        50%{background-position:100% 50%;}
+        100%{background-position:0% 50%;}
+    }
+
+    /* Video background */
+    #background-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+    }
+    #background-video video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Glassy weather container */
+    #weather-container {
+        background: rgba(0, 0, 0, 0.5);
+        padding: 30px;
+        border-radius: 25px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+        text-align: center;
+        width: 360px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    #weather-container:hover {
+        transform: scale(1.03);
+    }
+
+    h2 {
+        font-size: 32px;
+        color: #ffdd59;
+        text-shadow: 0 0 10px #ffdd59;
+        margin-bottom: 25px;
+    }
+
+    /* Input field */
+    #city-input {
+        width: 80%;
+        padding: 12px 15px;
+        border: none;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        font-size: 16px;
+        outline: none;
+        background-color: rgba(255,255,255,0.05);
+        color: #fff;
+        box-shadow: inset 0 2px 5px rgba(255,255,255,0.1);
+        transition: 0.3s;
+    }
+    #city-input:focus {
+        box-shadow: 0 0 12px #ffdd59;
+    }
+
+    /* Button styling */
+    #get-weather-btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 12px;
+        background: #ffdd59;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(255, 221, 89, 0.4);
+    }
+    #get-weather-btn:hover {
+        background: #ffc107;
+        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.6);
+        transform: translateY(-2px);
+    }
+
+    /* Weather data */
+    #weather-data {
+        margin-top: 25px;
+        font-size: 20px;
+        color: #fff;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .temp-cold { color: #00d4ff; }
+    .temp-warm { color: #ffb347; }
+    .temp-hot { color: #ff4c4c; }
+</style>
+</head>
+<body>
+
+<!-- Video background -->
+<div id="background-video">
+    <video id="bg-video" autoplay loop muted playsinline>
+        <source src="video/cold.mp4" type="video/mp4">
+    </video>
+</div>
+
+<!-- Weather UI -->
+<div id="weather-container">
+    <h2>Weather App</h2>
+    <input id="city-input" type="text" placeholder="Enter city name">
+    <button id="get-weather-btn">Get Weather</button>
+    <div id="weather-data"></div>
+</div>
+
+<script>
+const apiKey = 'e8b2b270dc8c3811f59481d89a2f22b3';
+const cityInput = document.getElementById('city-input');
+const getWeatherBtn = document.getElementById('get-weather-btn');
+const weatherDataDiv = document.getElementById('weather-data');
+const bgVideo = document.getElementById('bg-video');
+
+getWeatherBtn.addEventListener('click', getWeatherData);
+
+function getWeatherData() {
+    const city = cityInput.value.trim();
+    if (!city) {
+        alert('Please enter a city name');
+        return;
+    }
+
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+
+    fetch(url)
+    .then(res => res.json())
+    .then(data => {
+        if (data.cod !== 200) {
+            alert('City not found');
+            return;
+        }
+
+        const tempC = data.main.temp;
+        let tempClass = '', emoji = '', videoSrc = '';
+
+        if (tempC <= 10) {
+            tempClass = 'temp-cold';
+            emoji = '❄️';
+            videoSrc = '191159-889246512.mp4';
+        } else if (tempC <= 25) {
+            tempClass = 'temp-warm';
+            emoji = '🌤️';
+            videoSrc = '3831931135-preview.mp4';
+        } else {
+            tempClass = 'temp-hot';
+            emoji = '🔥';
+            videoSrc = '3820296191-preview.mp4';
+        }
+
+        // Update video
+        bgVideo.src = videoSrc;
+        bgVideo.play();
+
+        // Update weather info
+        const weatherHTML = `
+            <h3>Weather in ${data.name}</h3>
+            <p class="${tempClass}">Temperature: ${tempC} °C ${emoji}</p>
+            <p class="${tempClass}">Weather: ${data.weather[0].description}</p>
+            <p class="${tempClass}">Wind Speed: ${data.wind.speed} m/s</p>
+        `;
+
+        weatherDataDiv.style.opacity = 0;
+        weatherDataDiv.innerHTML = weatherHTML;
+
+        setTimeout(() => { weatherDataDiv.style.opacity = 1; }, 50);
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Failed to fetch weather data. Use Live Server in VSCode.');
+    });
+}
+</script>
+</body>
+</html>
